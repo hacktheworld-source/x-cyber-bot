@@ -6,8 +6,10 @@ nvd:
   base_url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
   request_delay: 30  # seconds between requests
 
-llm:
-  model_path: "models/mistral-7b-v0.1.Q4_K_M.gguf"
+ai:
+  provider: "openai"  # Currently only OpenAI is supported
+  api_key: "YOUR_OPENAI_KEY"
+  model: "gpt-4"  # Recommended for best results
   max_tokens: 2048
   temperature: 0.7
 
@@ -17,26 +19,35 @@ twitter:
   consumer_secret: "YOUR_CONSUMER_SECRET"
   access_token: "YOUR_ACCESS_TOKEN"
   access_token_secret: "YOUR_ACCESS_TOKEN_SECRET"
+  testing:
+    enabled: true  # Set to false for actual posting
+    log_posts: true  # Log would-be posts to console/file
 
 posting:
   max_daily_posts: 3
   min_post_interval: 14400  # 4 hours in seconds
-  time_windows:
-    - start: "09:00"  # EST
+  time_windows:  # All times in EST
+    - start: "09:00"  # Morning window
       end: "11:00"
-    - start: "14:00"
+    - start: "14:00"  # Afternoon window
       end: "16:00"
-    - start: "19:00"
+    - start: "19:00"  # Evening window (optional)
       end: "21:00"
 
 content:
-  max_thread_length: 7
-  technical_depth_range: [1, 5]
-  history_context_size: 100
-  generation_interval: 3600  # generate content every hour
+  max_thread_length: 7  # Maximum posts in a thread
+  technical_depth_range: [1, 5]  # Scale for post complexity
+  history_context_size: 100  # Number of recent posts to consider
+  generation_interval: 3600  # Generate content every hour
 
 logging:
-  level: "INFO"
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
   file: "logs/bot.log"
-  max_size: "10MB"
-  backup_count: 5 
+  max_size: "10MB"  # Rotation size
+  backup_count: 5  # Number of rotated logs to keep
+
+health:
+  check_interval: 300  # Health check every 5 minutes
+  error_threshold: 10  # Max errors per hour before degraded
+  memory_limit_mb: 1000  # Memory usage warning threshold
+  disk_usage_limit: 90  # Disk usage percentage warning threshold 

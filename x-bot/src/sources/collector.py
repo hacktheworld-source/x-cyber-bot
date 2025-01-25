@@ -109,13 +109,76 @@ class CVECollector:
             if not cve_data:
                 return None
                 
-            # Could expand this to fetch and parse technical writeups
-            # For now, we just return the basic data
+            # Enhance with writeup information
+            await self._enhance_writeup_info(cve_data)
             return cve_data
             
         except Exception as e:
             logger.error(f"Error fetching CVE {cve_id} details: {e}")
             return None
+
+    async def _enhance_writeup_info(self, cve_data: dict):
+        """Enhance CVE data with additional writeup information."""
+        writeups = cve_data["technical_writeups"]
+        enhanced_writeups = []
+        
+        for url in writeups:
+            try:
+                writeup_info = {
+                    "url": url,
+                    "source": self._classify_writeup_source(url),
+                    "quality": await self._estimate_writeup_quality(url)
+                }
+                enhanced_writeups.append(writeup_info)
+            except Exception as e:
+                logger.warning(f"Error processing writeup {url}: {e}")
+                continue
+        
+        # Sort by estimated quality
+        enhanced_writeups.sort(key=lambda w: w["quality"], reverse=True)
+        cve_data["technical_writeups"] = enhanced_writeups
+
+    def _classify_writeup_source(self, url: str) -> str:
+        """Classify the source of a technical writeup."""
+        url_lower = url.lower()
+        
+        if "github.com" in url_lower:
+            return "github"
+        elif "hackerone.com" in url_lower:
+            return "hackerone"
+        elif "bugzilla" in url_lower:
+            return "bugzilla"
+        elif "exploit-db.com" in url_lower:
+            return "exploit-db"
+        elif any(domain in url_lower for domain in ["research.", "blog."]):
+            return "research_blog"
+        elif "advisory" in url_lower:
+            return "security_advisory"
+        else:
+            return "other"
+
+    async def _estimate_writeup_quality(self, url: str) -> int:
+        """Estimate the quality of a writeup on a scale of 1-5."""
+        url_lower = url.lower()
+        score = 1  # Base score
+        
+        # Preferred sources get bonus points
+        if "github.com" in url_lower:
+            score += 2  # Often has POC code
+        elif "hackerone.com" in url_lower:
+            score += 2  # Detailed reports
+        elif "research." in url_lower:
+            score += 1  # Research blogs
+            
+        # Look for indicators of detailed analysis
+        if "analysis" in url_lower:
+            score += 1
+        if "technical" in url_lower:
+            score += 1
+        if "poc" in url_lower or "proof-of-concept" in url_lower:
+            score += 1
+            
+        return min(5, score)  # Cap at 5
 
     async def process_backlog(self, limit: int = 10) -> List[dict]:
         """Process unprocessed CVEs from the database."""

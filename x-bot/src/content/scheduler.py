@@ -10,17 +10,22 @@ class PostScheduler:
     def __init__(self, posting_config: dict, twitter_config: dict, db: Database):
         self.config = posting_config
         self.db = db
+        self.testing = twitter_config.get("testing", {})
+        self.is_test_mode = self.testing.get("enabled", False)
+        self.log_posts = self.testing.get("log_posts", True)
         
-        # Set up Twitter client
-        auth = tweepy.OAuthHandler(
-            twitter_config["consumer_key"],
-            twitter_config["consumer_secret"]
-        )
-        auth.set_access_token(
-            twitter_config["access_token"],
-            twitter_config["access_token_secret"]
-        )
-        self.twitter = tweepy.API(auth)
+        if not self.is_test_mode:
+            # Initialize Twitter client with credentials from config
+            self.client = tweepy.Client(
+                consumer_key=twitter_config["consumer_key"],
+                consumer_secret=twitter_config["consumer_secret"],
+                access_token=twitter_config["access_token"],
+                access_token_secret=twitter_config["access_token_secret"]
+            )
+            logger.info("Twitter client initialized")
+        else:
+            logger.info("Running in TEST MODE - no posts will be made to X")
+            self.client = None
         
         # Parse posting windows
         self.posting_windows = [
@@ -62,25 +67,59 @@ class PostScheduler:
             logger.error(f"Error getting next post: {e}")
             return None
 
+    def _validate_post_length(self, content: str) -> bool:
+        """Check if post content is within X's character limit."""
+        return len(content) <= 280
+
+    def _truncate_if_needed(self, content: str) -> str:
+        """Truncate post content if it exceeds the limit."""
+        if len(content) <= 280:
+            return content
+            
+        # Try to find a good breaking point
+        truncated = content[:277] + "..."
+        
+        # If we cut in the middle of a parenthetical explanation,
+        # try to find the last complete explanation
+        if truncated.count("(") != truncated.count(")"):
+            last_open = truncated.rfind("(")
+            last_close = truncated.rfind(")")
+            if last_open > last_close:
+                # Cut before the incomplete explanation
+                truncated = content[:last_open].strip()
+                if len(truncated) > 277:
+                    truncated = truncated[:277] + "..."
+                    
+        return truncated
+
     async def _post_thread(self, posts: List[dict]) -> bool:
         """Post a thread to Twitter."""
         try:
+            if self.is_test_mode:
+                # Log instead of posting
+                logger.info("TEST MODE - Would have posted thread:")
+                for i, post in enumerate(posts, 1):
+                    logger.info(f"Post {i}: {post.content}")
+                return True
+
             previous_id = None
             
             for post in posts:
                 try:
+                    content = self._truncate_if_needed(post.content)
+                    
                     if previous_id:
-                        response = self.twitter.update_status(
-                            status=post.content,
-                            in_reply_to_status_id=previous_id
+                        response = self.client.create_tweet(
+                            text=content,
+                            in_reply_to_tweet_id=previous_id
                         )
                     else:
-                        response = self.twitter.update_status(
-                            status=post.content
+                        response = self.client.create_tweet(
+                            text=content
                         )
                         
-                    previous_id = response.id
-                    await self.db.mark_post_posted(post.id, str(response.id))
+                    previous_id = response.data['id']
+                    await self.db.mark_post_posted(post.id, str(previous_id))
                     
                     # Rate limit compliance
                     await asyncio.sleep(1)

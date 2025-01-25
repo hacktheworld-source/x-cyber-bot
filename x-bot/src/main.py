@@ -8,6 +8,7 @@ from sources.collector import CVECollector
 from llm.model import LLMGenerator
 from content.generator import ContentGenerator
 from content.scheduler import PostScheduler
+from utils.health import HealthMonitor
 
 async def load_config() -> dict:
     """Load configuration from yaml file."""
@@ -36,6 +37,7 @@ class Bot:
         self.llm = None
         self.content_generator = None
         self.scheduler = None
+        self.health_monitor = HealthMonitor()
 
     async def setup(self):
         """Initialize all components."""
@@ -69,8 +71,13 @@ class Bot:
             )
             logger.info("Post scheduler initialized")
             
+            # Start health monitoring
+            asyncio.create_task(self.health_monitor.monitor_loop())
+            logger.info("Health monitoring started")
+            
         except Exception as e:
             logger.error(f"Error during setup: {e}")
+            self.health_monitor.record_error()
             raise
 
     async def run(self):
@@ -84,6 +91,7 @@ class Bot:
             
         except Exception as e:
             logger.error(f"Error in main loop: {e}")
+            self.health_monitor.record_error()
             raise
         finally:
             await self.cleanup()
@@ -92,10 +100,18 @@ class Bot:
         """Periodically generate new content."""
         while True:
             try:
-                await self.content_generator.generate_content()
+                # Record CVE check attempt
+                self.health_monitor.record_cve_check()
+                
+                success = await self.content_generator.generate_content()
+                
+                # Record post attempt
+                self.health_monitor.record_post_attempt(success)
+                
                 await asyncio.sleep(self.config["content"]["generation_interval"])
             except Exception as e:
                 logger.error(f"Error in content generation: {e}")
+                self.health_monitor.record_error()
                 await asyncio.sleep(300)  # Wait 5 minutes on error
 
     async def cleanup(self):

@@ -33,8 +33,7 @@
 
 ## Post Structure
 
-For threads:
-```
+For threads:```
 1/ start with an interesting hook that anyone can understand
 
 2/ introduce the basic context quickly
@@ -265,27 +264,43 @@ Difficulty Balance:
 
 ## Technical Infrastructure
 
-Hosting Requirements:
-- Reliable uptime
-- Database persistence
-- Regular backups
-- Monitoring system
-- Error alerting
-- Rate limit tracking
+Hosting Infrastructure:
+- DigitalOcean droplet (Ubuntu 22.04 LTS)
+- Minimal resource requirements (1GB RAM/1 CPU)
+- Reliable uptime monitoring
+- Automated backup system
+- Error alerting system
+- Rate limit tracking for APIs
 
-Local LLM Setup:
-- Use for content generation
-- Fallback options
-- Model update procedure
+AI Integration:
+- OpenAI GPT-4 for content generation
+- Strict prompt management
+- Content validation pipeline
 - Quality control checks
 - Performance monitoring
+- Cost optimization
+
+Development Modes:
+- Test mode for safe development
+- Production mode for live posting
+- Logging of all would-be posts
+- Database state tracking
+- API interaction monitoring
 
 Logging System:
 - Post generation attempts
-- API interactions
+- API interactions and costs
 - Error conditions
 - Performance metrics
 - Content statistics
+- Test mode outputs
+
+Database Management:
+- SQLite for data persistence
+- Regular automated backups
+- Performance optimization
+- Data integrity checks
+- State recovery procedures
 
 ## Community Interaction
 

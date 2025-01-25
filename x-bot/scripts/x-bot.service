@@ -1,0 +1,26 @@
+[Unit]
+Description=X Bot - Technical Security Bot
+After=network.target
+
+[Service]
+Type=simple
+User=x-bot
+Group=x-bot
+WorkingDirectory=/opt/x-bot
+Environment=PYTHONPATH=/opt/x-bot
+ExecStart=/opt/x-bot/env/bin/python -m src.main
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/x-bot/bot.log
+StandardError=append:/var/log/x-bot/error.log
+
+# Security
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target 
