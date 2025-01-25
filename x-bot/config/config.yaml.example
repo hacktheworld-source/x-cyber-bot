@@ -39,6 +39,8 @@ content:
   technical_depth_range: [1, 5]  # Scale for post complexity
   history_context_size: 100  # Number of recent posts to consider
   generation_interval: 3600  # Generate content every hour
+  max_daily_posts: 3  # Maximum number of posts to generate per day
+  min_post_interval: 3600  # Minimum time between posts in seconds 
 
 logging:
   level: "INFO"  # DEBUG, INFO, WARNING, ERROR
