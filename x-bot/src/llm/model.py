@@ -2,7 +2,6 @@ import os
 from typing import List, Optional, Tuple
 from pathlib import Path
 from loguru import logger
-from ctransformers import AutoModelForCausalLM
 from openai import AsyncOpenAI
 import logging
 
