@@ -1,0 +1,42 @@
+database:
+  path: "data/bot.db"
+  backup_dir: "data/backups"
+
+nvd:
+  base_url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
+  request_delay: 30  # seconds between requests
+
+llm:
+  model_path: "models/mistral-7b-v0.1.Q4_K_M.gguf"
+  max_tokens: 2048
+  temperature: 0.7
+
+twitter:
+  # Get these from developer.twitter.com
+  consumer_key: "YOUR_CONSUMER_KEY"
+  consumer_secret: "YOUR_CONSUMER_SECRET"
+  access_token: "YOUR_ACCESS_TOKEN"
+  access_token_secret: "YOUR_ACCESS_TOKEN_SECRET"
+
+posting:
+  max_daily_posts: 3
+  min_post_interval: 14400  # 4 hours in seconds
+  time_windows:
+    - start: "09:00"  # EST
+      end: "11:00"
+    - start: "14:00"
+      end: "16:00"
+    - start: "19:00"
+      end: "21:00"
+
+content:
+  max_thread_length: 7
+  technical_depth_range: [1, 5]
+  history_context_size: 100
+  generation_interval: 3600  # generate content every hour
+
+logging:
+  level: "INFO"
+  file: "logs/bot.log"
+  max_size: "10MB"
+  backup_count: 5 

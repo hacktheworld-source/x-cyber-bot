@@ -1,0 +1,24 @@
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# API Clients
+aiohttp>=3.9.0
+requests>=2.31.0
+
+# LLM
+
+# Twitter API
+tweepy>=4.14.0
+
+# Utils
+python-dateutil>=2.8.2
+pyyaml>=6.0.1
+loguru>=0.7.2
+
+# Testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+
+# Add
+openai>=1.0.0 
