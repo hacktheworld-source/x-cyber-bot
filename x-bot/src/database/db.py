@@ -49,10 +49,24 @@ class Database:
 
     async def add_cve(self, cve_data: dict) -> CVE:
         async with self.async_session() as session:
-            cve = CVE(**cve_data)
-            session.add(cve)
-            await session.commit()
-            return cve
+            try:
+                # Try to get existing CVE
+                existing_cve = await session.get(CVE, cve_data["id"])
+                if existing_cve:
+                    # Update existing CVE with new data
+                    for key, value in cve_data.items():
+                        setattr(existing_cve, key, value)
+                    cve = existing_cve
+                else:
+                    # Create new CVE
+                    cve = CVE(**cve_data)
+                    session.add(cve)
+                
+                await session.commit()
+                return cve
+            except Exception as e:
+                await session.rollback()
+                raise e
 
     async def add_post(self, post_data: dict) -> Post:
         async with self.async_session() as session:
