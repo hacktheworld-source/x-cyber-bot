@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
 import asyncio
 import argparse
-from pathlib import Path
 import yaml
 from loguru import logger
 from datetime import datetime, timedelta
