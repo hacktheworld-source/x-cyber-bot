@@ -20,7 +20,7 @@ class CVECollector:
         Returns (is_interesting, reasons_why)
         """
         reasons = []
-        desc = cve_data["description"].lower()
+        desc = cve_data.get("description", "").lower()
         
         # 1. High Impact / Damage Potential
         high_impact = [
@@ -31,7 +31,13 @@ class CVECollector:
             "system takeover",
             "full access",
             "critical",
-            "wormable"
+            "wormable",
+            "code execution",
+            "escalation of privileges",
+            "host binary",  # For container escapes
+            "host device",  # For container escapes
+            "host's network",  # For container escapes
+            "data tampering"
         ]
         
         # 2. Clever/Novel Methods
@@ -43,7 +49,11 @@ class CVECollector:
             "novel technique",
             "zero-day",
             "sandbox escape",
-            "creative"
+            "container escape",
+            "improper isolation",
+            "creative",
+            "specially crafted",
+            "bypass"
         ]
         
         # 3. Groundbreaking/Notable
@@ -54,7 +64,8 @@ class CVECollector:
             "major vulnerability",
             "widespread impact",
             "affects all",
-            "multiple vendors"
+            "multiple vendors",
+            "nondefault way"  # Interesting misconfigurations
         ]
 
         # Check each category
@@ -68,8 +79,15 @@ class CVECollector:
             reasons.append("notable discovery")
             
         # Also consider CVSS if available
-        if cve_data.get("cvss_score", 0) >= 9.0:
-            reasons.append("critical severity")
+        try:
+            cvss_score = float(cve_data.get("cvss_score", 0))
+            if cvss_score >= 9.0:
+                reasons.append("critical severity")
+            elif cvss_score >= 7.5:
+                reasons.append("high severity")
+        except (TypeError, ValueError):
+            # If CVSS score is invalid, just ignore it
+            pass
 
         return len(reasons) > 0, reasons
 
