@@ -275,4 +275,4 @@ class ContentGenerator:
     async def close(self):
         """Clean up resources."""
         await self.collector.close()
-        self.llm.close() 
+        self.llm.close()

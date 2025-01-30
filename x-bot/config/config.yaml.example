@@ -24,8 +24,8 @@ twitter:
     log_posts: true  # Log would-be posts to console/file
 
 posting:
-  max_daily_posts: 3
-  min_post_interval: 14400  # 4 hours in seconds
+  max_daily_posts: 10
+  min_post_interval: 3600  # 1 hour in seconds
   time_windows:  # All times in EST
     - start: "09:00"  # Morning window
       end: "11:00"

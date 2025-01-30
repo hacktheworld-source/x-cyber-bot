@@ -14,64 +14,64 @@ class CVECollector:
         """Clean up resources."""
         await self.nvd_client.close()
 
-    def _is_interesting_cve(self, cve_data: dict) -> bool:
-        """Determine if a CVE is interesting enough to post about."""
+    def _is_interesting_cve(self, cve_data: dict) -> tuple[bool, list[str]]:
+        """
+        Simple check if a CVE is interesting enough to post about.
+        Returns (is_interesting, reasons_why)
+        """
+        reasons = []
+        desc = cve_data["description"].lower()
         
-        # Must have some technical writeups
-        if not cve_data["technical_writeups"]:
-            return False
-            
-        # Should have identified interesting factors
-        if not cve_data["interesting_factors"]:
-            return False
-            
-        # If it has a CVSS score, it should be significant
-        if cve_data["cvss_score"] is not None and cve_data["cvss_score"] < 7.0:
-            return False
-            
-        # Check for indicators of boring vulnerabilities
-        boring_patterns = [
-            "default password",
-            "default credential",
-            "missing authentication",
-            "cross-site scripting",
-            "sql injection",
-            "weak password",
-            "information disclosure",
-            "denial of service"
+        # 1. High Impact / Damage Potential
+        high_impact = [
+            "remote code execution",
+            "privilege escalation",
+            "arbitrary code",
+            "root access",
+            "system takeover",
+            "full access",
+            "critical",
+            "wormable"
         ]
         
-        desc_lower = cve_data["description"].lower()
-        if any(pattern in desc_lower for pattern in boring_patterns):
-            return False
-            
-        # Check for indicators of interesting vulnerabilities
-        interesting_patterns = [
-            "novel",
-            "unique",
-            "sophisticated",
+        # 2. Clever/Novel Methods
+        clever_methods = [
             "chain",
-            "chained",
-            "complex",
-            "creative",
-            "unusual",
-            "unexpected"
+            "race condition",
+            "side channel",
+            "type confusion",
+            "novel technique",
+            "zero-day",
+            "sandbox escape",
+            "creative"
         ]
         
-        # Bonus points for interesting descriptions
-        if any(pattern in desc_lower for pattern in interesting_patterns):
-            return True
+        # 3. Groundbreaking/Notable
+        notable = [
+            "first time",
+            "previously unknown",
+            "breakthrough",
+            "major vulnerability",
+            "widespread impact",
+            "affects all",
+            "multiple vendors"
+        ]
+
+        # Check each category
+        if any(impact in desc for impact in high_impact):
+            reasons.append("high impact")
             
-        # If it has multiple interesting factors, it's probably worth posting
-        if len(cve_data["interesting_factors"]) >= 2:
-            return True
+        if any(method in desc for method in clever_methods):
+            reasons.append("clever method")
             
-        # If it has a high CVSS score and technical writeups, might be interesting
-        if cve_data["cvss_score"] is not None and cve_data["cvss_score"] >= 9.0:
-            return True
+        if any(note in desc for note in notable):
+            reasons.append("notable discovery")
             
-        # Default to False if none of the above criteria are met
-        return False
+        # Also consider CVSS if available
+        if cve_data.get("cvss_score", 0) >= 9.0:
+            reasons.append("critical severity")
+
+        return len(reasons) > 0, reasons
 
     async def collect_recent_cves(self) -> List[dict]:
         """Collect and filter recent CVEs."""
@@ -81,11 +81,24 @@ class CVECollector:
         cves = await self.nvd_client.get_recent_cves()
         logger.info(f"Retrieved {len(cves)} CVEs from NVD")
         
+        # Debug: Print sample of raw CVEs
+        for i, cve in enumerate(cves[:3]):
+            logger.debug(f"\nRaw CVE {i + 1}:")
+            logger.debug(f"ID: {cve.get('id', 'N/A')}")
+            logger.debug(f"Description: {cve.get('description', 'N/A')}")
+            logger.debug(f"CVSS: {cve.get('cvss_score', 'N/A')}")
+            logger.debug(f"References: {cve.get('references', [])}")
+            logger.debug(f"Technical Writeups: {cve.get('technical_writeups', [])}")
+        
         # Filter for interesting ones
         interesting_cves = []
         for cve in cves:
-            if self._is_interesting_cve(cve):
+            is_interesting, reasons = self._is_interesting_cve(cve)
+            if is_interesting:
+                logger.info(f"Found interesting CVE {cve['id']}: {', '.join(reasons)}")
                 interesting_cves.append(cve)
+            else:
+                logger.debug(f"Skipping CVE {cve['id']}: No interesting factors found")
                 
         logger.info(f"Found {len(interesting_cves)} interesting CVEs")
         
