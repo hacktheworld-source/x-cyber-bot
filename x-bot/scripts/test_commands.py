@@ -36,10 +36,19 @@ async def test_cve_collection(config: dict):
     if cves:
         print("\nExample CVE:")
         cve = cves[0]
-        print(f"ID: {cve['id']}")
-        print(f"Description: {cve['description']}")
-        print(f"CVSS Score: {cve['cvss_score']}")
-        print(f"Interesting Factors: {', '.join(cve['interesting_factors'])}")
+        # Handle both dict and CVE model objects
+        if hasattr(cve, 'id'):
+            # It's a CVE model object
+            print(f"ID: {cve.id}")
+            print(f"Description: {cve.description}")
+            print(f"CVSS Score: {cve.cvss_score}")
+            print(f"Interesting Factors: {', '.join(cve.interesting_factors)}")
+        else:
+            # It's a dictionary
+            print(f"ID: {cve['id']}")
+            print(f"Description: {cve['description']}")
+            print(f"CVSS Score: {cve['cvss_score']}")
+            print(f"Interesting Factors: {', '.join(cve['interesting_factors'])}")
     
     await collector.close()
 
